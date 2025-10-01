@@ -45,7 +45,7 @@ def preprocessar_texto(texto):
 def classificar_email_gemini(texto):
     """Classifica email usando Google Gemini"""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         prompt = f"""
         ANALISE ESTE EMAIL E CLASSIFIQUE EM APENAS UMA DESTAS CATEGORIAS:
@@ -82,7 +82,7 @@ def classificar_email_gemini(texto):
 
 def gerar_resposta_gemini(texto, categoria):
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         if categoria == "PRODUTIVO":
             prompt = f"""
