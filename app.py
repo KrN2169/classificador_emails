@@ -19,17 +19,21 @@ logger = logging.getLogger(__name__)
 
 # Configurar Google Gemini
 google_api_key = os.getenv("GOOGLE_API_KEY")
+print(f"🔑 API Key no código: {google_api_key}")
 if google_api_key:
     try:
         genai.configure(api_key=google_api_key)
         logger.info("✅ Google Gemini configurado!")
         GEMINI_AVAILABLE = True
+        print("✅ GEMINI_AVAILABLE: True")
     except Exception as e:
         logger.error(f"❌ Erro ao configurar Gemini: {e}")
         GEMINI_AVAILABLE = False
+        print(f"❌ Erro Gemini: {e}")
 else:
     logger.warning("⚠️ GOOGLE_API_KEY não encontrada - usando modo local")
     GEMINI_AVAILABLE = False
+    print("❌ GOOGLE_API_KEY não encontrada")
 
 def preprocessar_texto(texto):
     """Pré-processamento do texto para análise"""
