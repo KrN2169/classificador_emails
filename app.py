@@ -19,30 +19,44 @@ logger = logging.getLogger(__name__)
 
 # Configurar Google Gemini
 google_api_key = os.getenv("GOOGLE_API_KEY")
-print(f"🔑 API Key no código: {google_api_key}")
+print(f"🔑 API Key: {google_api_key}")
+
 if google_api_key:
     try:
         genai.configure(api_key=google_api_key)
+        
+        # TESTAR A API KEY - Listar modelos disponíveis
+        print("🔍 Testando API Key...")
+        models = genai.list_models()
+        available_models = []
+        
+        for model in models:
+            if 'generateContent' in model.supported_generation_methods:
+                available_models.append(model.name)
+                print(f"✅ Modelo: {model.name}")
+        
+        print(f"📊 Total de modelos disponíveis: {len(available_models)}")
+        
+        if available_models:
+            # Usar o primeiro modelo disponível
+            model_name = available_models[0]
+            print(f"🎯 Usando modelo: {model_name}")
+            
+            # Testar o modelo com uma solicitação simples
+            test_model = genai.GenerativeModel(model_name)
+            test_response = test_model.generate_content("Responda em uma palavra: OK")
+            print(f"🧪 Teste da API: {test_response.text}")
+            
         logger.info("✅ Google Gemini configurado!")
         GEMINI_AVAILABLE = True
-        print("✅ GEMINI_AVAILABLE: True")
+        
     except Exception as e:
         logger.error(f"❌ Erro ao configurar Gemini: {e}")
+        print(f"🔴 ERRO DETALHADO: {e}")
         GEMINI_AVAILABLE = False
-        print(f"❌ Erro Gemini: {e}")
 else:
     logger.warning("⚠️ GOOGLE_API_KEY não encontrada - usando modo local")
     GEMINI_AVAILABLE = False
-    print("❌ GOOGLE_API_KEY não encontrada")
-
-def preprocessar_texto(texto):
-    """Pré-processamento do texto para análise"""
-    # Limpeza básica
-    texto = re.sub(r'\s+', ' ', texto)  # Remove espaços múltiplos
-    texto = re.sub(r'[^\w\s@.,!?;-]', '', texto)  # Mantém caracteres comuns em emails
-    return texto.strip()
-
-def classificar_email_gemini(texto):
     """Classifica email usando Google Gemini"""
     try:
         model = genai.GenerativeModel('gemini-pro')
