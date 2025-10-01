@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Início - Classificador de Emails{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="text-center mb-0">
+                    <i class="fas fa-robot me-2"></i>
+                    Classificador Inteligente de Emails
+                </h2>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <p class="lead">Use IA para classificar emails automaticamente em <strong>Produtivo</strong> ou <strong>Improdutivo</strong> e gerar respostas sugeridas.</p>
+                </div>
+
+                {% if erro %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ erro }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button" role="tab">
+                            <i class="fas fa-font me-2"></i>Texto Direto
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file" type="button" role="tab">
+                            <i class="fas fa-file-upload me-2"></i>Upload de Arquivo
+                        </button>
+                    </li>
+                </ul>
+
+                <form action="/processar" method="post" enctype="multipart/form-data">
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Aba de Texto Direto -->
+                        <div class="tab-pane fade show active" id="text" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="texto_direto" class="form-label">
+                                    <strong>Cole o texto do email:</strong>
+                                </label>
+                                <textarea class="form-control" id="texto_direto" name="texto_direto" 
+                                          rows="8" placeholder="Cole aqui o conteúdo do email que deseja classificar..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Aba de Upload -->
+                        <div class="tab-pane fade" id="file" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="arquivo" class="form-label">
+                                    <strong>Selecione um arquivo:</strong>
+                                </label>
+                                <input class="form-control" type="file" id="arquivo" name="arquivo" 
+                                       accept=".pdf,.txt,.doc,.docx">
+                                <div class="form-text">
+                                    Formatos suportados: PDF, TXT, DOC, DOCX (máx. 5MB)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-magic me-2"></i>
+                            Classificar Email
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Exemplos Rápidos -->
+                <div class="mt-5">
+                    <h5 class="text-center mb-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Exemplos para Testar
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="fas fa-briefcase me-2"></i>Produtivo
+                                    </h6>
+                                    <p class="card-text small">"Preciso de ajuda com erro no sistema. Não consigo acessar minhas faturas desde ontem. Podem me ajudar urgentemente?"</p>
+                                    <button class="btn btn-outline-success btn-sm usar-exemplo" data-texto='Preciso de ajuda com erro no sistema. Não consigo acessar minhas faturas desde ontem. Podem me ajudar urgentemente?'>
+                                        Usar Este
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning">
+                                        <i class="fas fa-coffee me-2"></i>Improdutivo
+                                    </h6>
+                                    <p class="card-text small">"Olá equipe! Só passando para desejar um ótimo final de semana! Obrigado por todo o trabalho de vocês!"</p>
+                                    <button class="btn btn-outline-warning btn-sm usar-exemplo" data-texto='Olá equipe! Só passando para desejar um ótimo final de semana! Obrigado por todo o trabalho de vocês!'>
+                                        Usar Este
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas/Info -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-2x text-primary mb-2"></i>
+                        <h5>IA Avançada</h5>
+                        <p class="small">Classificação inteligente com Google Gemini</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-bolt fa-2x text-success mb-2"></i>
+                        <h5>Processamento Rápido</h5>
+                        <p class="small">Resultados em segundos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
+                        <h5>100% Seguro</h5>
+                        <p class="small">Seus dados são processados com privacidade</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
