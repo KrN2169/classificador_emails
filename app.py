@@ -19,44 +19,30 @@ logger = logging.getLogger(__name__)
 
 # Configurar Google Gemini
 google_api_key = os.getenv("GOOGLE_API_KEY")
-print(f"🔑 API Key: {google_api_key}")
+print(f"🔑 API Key no código: {google_api_key}")
 
 if google_api_key:
     try:
         genai.configure(api_key=google_api_key)
-        
-        # TESTAR A API KEY - Listar modelos disponíveis
-        print("🔍 Testando API Key...")
-        models = genai.list_models()
-        available_models = []
-        
-        for model in models:
-            if 'generateContent' in model.supported_generation_methods:
-                available_models.append(model.name)
-                print(f"✅ Modelo: {model.name}")
-        
-        print(f"📊 Total de modelos disponíveis: {len(available_models)}")
-        
-        if available_models:
-            # Usar o primeiro modelo disponível
-            model_name = available_models[0]
-            print(f"🎯 Usando modelo: {model_name}")
-            
-            # Testar o modelo com uma solicitação simples
-            test_model = genai.GenerativeModel(model_name)
-            test_response = test_model.generate_content("Responda em uma palavra: OK")
-            print(f"🧪 Teste da API: {test_response.text}")
-            
         logger.info("✅ Google Gemini configurado!")
         GEMINI_AVAILABLE = True
-        
+        print("✅ GEMINI_AVAILABLE: True")
     except Exception as e:
         logger.error(f"❌ Erro ao configurar Gemini: {e}")
-        print(f"🔴 ERRO DETALHADO: {e}")
         GEMINI_AVAILABLE = False
+        print(f"❌ Erro Gemini: {e}")
 else:
     logger.warning("⚠️ GOOGLE_API_KEY não encontrada - usando modo local")
     GEMINI_AVAILABLE = False
+    print("❌ GOOGLE_API_KEY não encontrada")
+
+def preprocessar_texto(texto):
+    """Pré-processamento do texto para análise"""
+    texto = re.sub(r'\s+', ' ', texto)
+    texto = re.sub(r'[^\w\s@.,!?;-]', '', texto)
+    return texto.strip()
+
+def classificar_email_gemini(texto):
     """Classifica email usando Google Gemini"""
     try:
         model = genai.GenerativeModel('gemini-pro')
@@ -65,16 +51,15 @@ else:
         ANALISE ESTE EMAIL E CLASSIFIQUE EM APENAS UMA DESTAS CATEGORIAS:
 
         CATEGORIAS:
-        - PRODUTIVO: Emails que requerem ação ou resposta específica (solicitações de suporte, dúvidas sobre sistema, atualizações de casos)
-        - IMPRODUTIVO: Emails que não necessitam ação imediata (mensagens sociais, felicitações, agradecimentos genéricos)
+        - PRODUTIVO: Emails que requerem ação ou resposta específica
+        - IMPRODUTIVO: Emails que não necessitam ação imediata
 
         REGRAS:
-        - Se o email pede informação, solicita ação ou relata problema → PRODUTIVO
-        - Se é apenas mensagem social sem solicitação → IMPRODUTIVO
+        - Se pede informação, ação ou relata problema → PRODUTIVO
+        - Se é mensagem social sem solicitação → IMPRODUTIVO
         - Responda APENAS com "PRODUTIVO" ou "IMPRODUTIVO"
 
-        TEXTO DO EMAIL:
-        {texto[:3000]}
+        TEXTO: {texto[:3000]}
 
         CLASSIFICAÇÃO:
         """
@@ -82,41 +67,39 @@ else:
         response = model.generate_content(prompt)
         classificacao = response.text.strip().upper()
         
-        # Garantir que a resposta esteja no formato correto
         if "PRODUTIVO" in classificacao:
             return "PRODUTIVO"
         elif "IMPRODUTIVO" in classificacao:
             return "IMPRODUTIVO"
         else:
-            return classificar_email_local(texto)  # Fallback
+            return classificar_email_local(texto)
             
     except Exception as e:
         logger.error(f"Erro Gemini na classificação: {e}")
         return classificar_email_local(texto)
 
 def gerar_resposta_gemini(texto, categoria):
+    """Gera resposta automática usando Google Gemini"""
     try:
         model = genai.GenerativeModel('gemini-pro')
         
         if categoria == "PRODUTIVO":
             prompt = f"""
             Gere uma resposta profissional e útil para este email PRODUTIVO.
-            A resposta deve ser em português, direta e oferecer ajuda concreta.
-            
-            EMAIL ORIGINAL:
-            {texto[:2000]}
-            
-            RESPOSTA SUGERIDA (máximo 100 palavras):
+            Seja direto e ofereça ajuda concreta.
+
+            EMAIL: {texto[:2000]}
+
+            RESPOSTA (português, máximo 100 palavras):
             """
-        else:  # IMPRODUTIVO
+        else:
             prompt = f"""
             Gere uma resposta educada e breve para este email IMPRODUTIVO.
-            A resposta deve ser agradável mas não incentivar continuidade desnecessária.
-            
-            EMAIL ORIGINAL:
-            {texto[:2000]}
-            
-            RESPOSTA SUGERIDA (máximo 50 palavras):
+            Seja agradável mas não prolongue a conversa.
+
+            EMAIL: {texto[:2000]}
+
+            RESPOSTA (português, máximo 50 palavras):
             """
         
         response = model.generate_content(prompt)
@@ -130,7 +113,6 @@ def classificar_email_local(texto):
     """Classificação local baseada em palavras-chave"""
     texto_lower = texto.lower()
     
-    # Palavras-chave para emails produtivos
     palavras_produtivas = [
         'problema', 'erro', 'ajuda', 'suporte', 'solicitação', 'pedido',
         'urgente', 'importante', 'dúvida', 'questão', 'assunto', 'caso',
@@ -138,7 +120,6 @@ def classificar_email_local(texto):
         'não funciona', 'como fazer', 'preciso de ajuda', 'resolver'
     ]
     
-    # Palavras-chave para emails improdutivos  
     palavras_improdutivas = [
         'obrigado', 'obrigada', 'grato', 'gratidão', 'parabéns', 'feliz',
         'natal', 'ano novo', 'feriado', 'final de semana', 'cumprimentos',
@@ -148,13 +129,11 @@ def classificar_email_local(texto):
     contagem_produtivo = sum(1 for palavra in palavras_produtivas if palavra in texto_lower)
     contagem_improdutivo = sum(1 for palavra in palavras_improdutivas if palavra in texto_lower)
     
-    # Lógica de classificação
     if contagem_produtivo > contagem_improdutivo:
         return "PRODUTIVO"
     elif contagem_improdutivo > contagem_produtivo:
         return "IMPRODUTIVO"
     else:
-        # Empate - analisa estrutura
         if any(indicador in texto_lower for indicador in ['?', 'problema', 'ajuda', 'suporte']):
             return "PRODUTIVO"
         else:
@@ -163,11 +142,9 @@ def classificar_email_local(texto):
 def gerar_resposta_local(categoria):
     """Gera resposta local baseada na categoria"""
     if categoria == "PRODUTIVO":
-        return """Agradecemos seu contato. Nossa equipe analisará sua solicitação e retornará em breve. 
-        
-Caso necessário, você pode acompanhar o status através do nosso sistema ou entrar em contato pelo telefone (XX) XXXX-XXXX."""
+        return "Agradecemos seu contato. Nossa equipe analisará sua solicitação e retornará em breve. Caso necessário, você pode acompanhar o status através do nosso sistema."
     else:
-        return """Agradecemos sua mensagem! Estamos sempre à disposição para ajudar quando necessário."""
+        return "Agradecemos sua mensagem! Estamos sempre à disposição para ajudar quando necessário."
 
 def extrair_texto_arquivo(arquivo):
     """Extrai texto de arquivos PDF ou TXT"""
@@ -190,6 +167,8 @@ def index():
 @app.route('/processar', methods=['POST'])
 def processar_email():
     try:
+        print(f"🔍 INICIANDO - GEMINI_AVAILABLE: {GEMINI_AVAILABLE}")
+        
         # Obter o texto do email
         texto_email = ""
         
@@ -209,14 +188,15 @@ def processar_email():
         
         # Classificação
         if GEMINI_AVAILABLE:
+            print("🔍 Tentando classificar com Gemini...")
             categoria = classificar_email_gemini(texto_processado)
             resposta = gerar_resposta_gemini(texto_processado, categoria)
+            print(f"🔍 Categoria Gemini: {categoria}")
         else:
+            print("🔍 Usando classificação local...")
             categoria = classificar_email_local(texto_processado)
             resposta = gerar_resposta_local(categoria)
-        
-        # Log da análise
-        logger.info(f"Email processado - Categoria: {categoria}, Tamanho: {len(texto_processado)}")
+            print(f"🔍 Categoria Local: {categoria}")
         
         return render_template('resultado.html', 
                              categoria=categoria,
